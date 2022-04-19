@@ -1028,19 +1028,17 @@ public class LLVMGenerator implements LIRGeneratorTool, SubstrateLIRGenerator {
         builder.buildStackmap(builder.constantLong(startPatchpointId));
         compilationResult.recordInfopoint(NumUtil.safeToInt(startPatchpointId), null, InfopointReason.METHOD_START);
 
-        LLVMValueRef jumpAddressAddress;
+        LLVMValueRef methodBase;
         if (SubstrateOptions.SpawnIsolates.getValue()) {
             LLVMValueRef thread = buildInlineGetRegister(threadArg.getRegister().name);
             LLVMValueRef heapBaseAddress = builder.buildGEP(builder.buildIntToPtr(thread, builder.rawPointerType()), builder.constantInt(threadIsolateOffset));
             LLVMValueRef heapBase = builder.buildLoad(heapBaseAddress, builder.rawPointerType());
             LLVMValueRef methodId = buildInlineGetRegister(methodIdArg.getRegister().name);
-            LLVMValueRef methodBase = builder.buildGEP(builder.buildIntToPtr(heapBase, builder.rawPointerType()), builder.buildPtrToInt(methodId));
-            jumpAddressAddress = builder.buildGEP(methodBase, builder.constantInt(methodObjEntryPointOffset));
+            methodBase = builder.buildGEP(builder.buildIntToPtr(heapBase, builder.rawPointerType()), builder.buildPtrToInt(methodId));
         } else {
-            LLVMValueRef methodBase = buildInlineGetRegister(methodIdArg.getRegister().name);
-            jumpAddressAddress = builder.buildGEP(builder.buildIntToPtr(methodBase, builder.rawPointerType()), builder.constantInt(methodObjEntryPointOffset));
+            methodBase = builder.buildIntToPtr(buildInlineGetRegister(methodIdArg.getRegister().name), builder.rawPointerType());
         }
-        LLVMValueRef jumpAddress = builder.buildLoad(jumpAddressAddress, builder.rawPointerType());
+        LLVMValueRef jumpAddress = buildInlineLoad(methodBase, methodObjEntryPointOffset);
         buildInlineJump(jumpAddress);
         builder.buildUnreachable();
     }
@@ -1136,6 +1134,19 @@ public class LLVMGenerator implements LIRGeneratorTool, SubstrateLIRGenerator {
         LLVMValueRef jump = builder.buildInlineAsm(inlineAsmType, asmSnippet, true, false, inputConstraint);
         LLVMValueRef call = builder.buildCall(jump, address);
         builder.setCallSiteAttribute(call, Attribute.GCLeafFunction);
+    }
+
+    private LLVMValueRef buildInlineLoad(LLVMValueRef address, int offset) {
+        LLVMTypeRef inlineAsmType = builder.functionType(builder.rawPointerType(), builder.rawPointerType(), builder.intType());
+        String asmSnippet = LLVMTargetSpecific.get().getLoadInlineAsm(offset);
+        InlineAssemblyConstraint outputConstraintRegister = new InlineAssemblyConstraint(Type.Output, Location.namedRegister(LLVMTargetSpecific.get().getScratchRegister()));
+        InlineAssemblyConstraint inputConstraintRegister = new InlineAssemblyConstraint(Type.Input, Location.register());
+        InlineAssemblyConstraint inputConstraintImm = new InlineAssemblyConstraint(Type.Input, Location.imm());
+
+        LLVMValueRef load = builder.buildInlineAsm(inlineAsmType, asmSnippet, false, false, outputConstraintRegister, inputConstraintRegister, inputConstraintImm);
+        LLVMValueRef call = builder.buildCall(load, address, builder.constantInt(offset));
+        builder.setCallSiteAttribute(call, Attribute.GCLeafFunction);
+        return call;
     }
 
     private LLVMValueRef buildInlineGetRegister(String registerName) {

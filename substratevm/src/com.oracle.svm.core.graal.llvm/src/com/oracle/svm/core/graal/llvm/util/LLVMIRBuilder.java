@@ -723,6 +723,10 @@ public class LLVMIRBuilder implements AutoCloseable {
                 this.repr = repr;
             }
 
+            public static Location imm() {
+                return new Location("i");
+            }
+
             public static Location register() {
                 return new Location("r");
             }

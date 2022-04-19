@@ -56,6 +56,11 @@ public interface LLVMTargetSpecific {
     String getJumpInlineAsm();
 
     /**
+     * Snippet that loads a value in a register.
+     */
+    String getLoadInlineAsm(int offset);
+
+    /**
      * Name of the architecture to be passed to the LLVM compiler.
      */
     String getLLVMArchName();
@@ -96,6 +101,11 @@ public interface LLVMTargetSpecific {
     default String getLLVMRegisterName(String register) {
         return register;
     }
+
+    /**
+     * A scratch register of the architecture.
+     */
+    String getScratchRegister();
 }
 
 @AutomaticFeature
@@ -120,6 +130,11 @@ class LLVMAMD64TargetSpecificFeature implements Feature {
             @Override
             public String getJumpInlineAsm() {
                 return "jmpq *$0";
+            }
+
+            @Override
+            public String getLoadInlineAsm(int offset) {
+                return "movq " + offset + "($1), $0";
             }
 
             @Override
@@ -165,6 +180,11 @@ class LLVMAMD64TargetSpecificFeature implements Feature {
                 }
                 return list;
             }
+
+            @Override
+            public String getScratchRegister() {
+                return "rax";
+            }
         });
     }
 }
@@ -191,6 +211,11 @@ class LLVMAArch64TargetSpecificFeature implements Feature {
             @Override
             public String getJumpInlineAsm() {
                 return "BR $0";
+            }
+
+            @Override
+            public String getLoadInlineAsm(int offset) {
+                return "LDR $0, [$1, #" + offset + "]";
             }
 
             @Override
@@ -239,6 +264,11 @@ class LLVMAArch64TargetSpecificFeature implements Feature {
             @Override
             public String getLLVMRegisterName(String register) {
                 return register.replace("r", "x");
+            }
+
+            @Override
+            public String getScratchRegister() {
+                return "x8";
             }
         });
     }
