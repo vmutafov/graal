@@ -1028,17 +1028,14 @@ public class LLVMGenerator implements LIRGeneratorTool, SubstrateLIRGenerator {
         builder.buildStackmap(builder.constantLong(startPatchpointId));
         compilationResult.recordInfopoint(NumUtil.safeToInt(startPatchpointId), null, InfopointReason.METHOD_START);
 
-        LLVMValueRef methodBase;
+        LLVMValueRef jumpAddress;
         if (SubstrateOptions.SpawnIsolates.getValue()) {
-            LLVMValueRef thread = buildInlineGetRegister(threadArg.getRegister().name);
-            LLVMValueRef heapBaseAddress = builder.buildGEP(builder.buildIntToPtr(thread, builder.rawPointerType()), builder.constantInt(threadIsolateOffset));
-            LLVMValueRef heapBase = builder.buildLoad(heapBaseAddress, builder.rawPointerType());
-            LLVMValueRef methodId = buildInlineGetRegister(methodIdArg.getRegister().name);
-            methodBase = builder.buildGEP(builder.buildIntToPtr(heapBase, builder.rawPointerType()), builder.buildPtrToInt(methodId));
+            buildInlineLoad(threadArg.getRegister().name, LLVMTargetSpecific.get().getScratchRegister(), threadIsolateOffset);
+            buildInlineAdd(LLVMTargetSpecific.get().getScratchRegister(), methodIdArg.getRegister().name);
+            jumpAddress = buildInlineLoad(LLVMTargetSpecific.get().getScratchRegister(), LLVMTargetSpecific.get().getScratchRegister(), methodObjEntryPointOffset);
         } else {
-            methodBase = builder.buildIntToPtr(buildInlineGetRegister(methodIdArg.getRegister().name), builder.rawPointerType());
+            jumpAddress = buildInlineLoad(methodIdArg.getRegister().name, LLVMTargetSpecific.get().getScratchRegister(), methodObjEntryPointOffset);
         }
-        LLVMValueRef jumpAddress = buildInlineLoad(methodBase, methodObjEntryPointOffset);
         buildInlineJump(jumpAddress);
         builder.buildUnreachable();
     }
@@ -1136,26 +1133,24 @@ public class LLVMGenerator implements LIRGeneratorTool, SubstrateLIRGenerator {
         builder.setCallSiteAttribute(call, Attribute.GCLeafFunction);
     }
 
-    private LLVMValueRef buildInlineLoad(LLVMValueRef address, int offset) {
-        LLVMTypeRef inlineAsmType = builder.functionType(builder.rawPointerType(), builder.rawPointerType(), builder.intType());
-        String asmSnippet = LLVMTargetSpecific.get().getLoadInlineAsm(offset);
-        InlineAssemblyConstraint outputConstraintRegister = new InlineAssemblyConstraint(Type.Output, Location.namedRegister(LLVMTargetSpecific.get().getScratchRegister()));
-        InlineAssemblyConstraint inputConstraintRegister = new InlineAssemblyConstraint(Type.Input, Location.register());
-        InlineAssemblyConstraint inputConstraintImm = new InlineAssemblyConstraint(Type.Input, Location.imm());
+    private LLVMValueRef buildInlineLoad(String inputRegisterName, String outputRegisterName, int offset) {
+        LLVMTypeRef inlineAsmType = builder.functionType(builder.rawPointerType());
+        String asmSnippet = LLVMTargetSpecific.get().getLoadInlineAsm(inputRegisterName, offset);
+        InlineAssemblyConstraint outputConstraintRegister = new InlineAssemblyConstraint(Type.Output, Location.namedRegister(outputRegisterName));
 
-        LLVMValueRef load = builder.buildInlineAsm(inlineAsmType, asmSnippet, false, false, outputConstraintRegister, inputConstraintRegister, inputConstraintImm);
-        LLVMValueRef call = builder.buildCall(load, address, builder.constantInt(offset));
+        LLVMValueRef load = builder.buildInlineAsm(inlineAsmType, asmSnippet, false, false, outputConstraintRegister);
+        LLVMValueRef call = builder.buildCall(load);
         builder.setCallSiteAttribute(call, Attribute.GCLeafFunction);
         return call;
     }
 
-    private LLVMValueRef buildInlineGetRegister(String registerName) {
+    private LLVMValueRef buildInlineAdd(String outputRegisterName, String inputRegisterName) {
         LLVMTypeRef inlineAsmType = builder.functionType(builder.rawPointerType());
-        String asmSnippet = LLVMTargetSpecific.get().getRegisterInlineAsm(registerName);
-        InlineAssemblyConstraint outputConstraint = new InlineAssemblyConstraint(Type.Output, Location.namedRegister(LLVMTargetSpecific.get().getLLVMRegisterName(registerName)));
+        String asmSnippet = LLVMTargetSpecific.get().getAddInlineAssembly(outputRegisterName, inputRegisterName);
+        InlineAssemblyConstraint outputConstraintRegister = new InlineAssemblyConstraint(Type.Output, Location.namedRegister(outputRegisterName));
 
-        LLVMValueRef getRegister = builder.buildInlineAsm(inlineAsmType, asmSnippet, false, false, outputConstraint);
-        LLVMValueRef call = builder.buildCall(getRegister);
+        LLVMValueRef add = builder.buildInlineAsm(inlineAsmType, asmSnippet, false, false, outputConstraintRegister);
+        LLVMValueRef call = builder.buildCall(add);
         builder.setCallSiteAttribute(call, Attribute.GCLeafFunction);
         return call;
     }
