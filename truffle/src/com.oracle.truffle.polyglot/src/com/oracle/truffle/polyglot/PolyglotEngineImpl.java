@@ -1386,7 +1386,7 @@ final class PolyglotEngineImpl implements com.oracle.truffle.polyglot.PolyglotIm
     static boolean cancelOrExitOrInterrupt(PolyglotContextImpl context, List<Future<Void>> futures, long startMillis, Duration timeout) {
         try {
             synchronized (context) {
-                assert context.singleThreaded || !context.isActive(Thread.currentThread()) : "Cancel while entered is only allowed for single-threaded contexts!";
+                assert context.singleThreaded || !context.isActive(ThreadUtils.currentPlatformThread()) : "Cancel while entered is only allowed for single-threaded contexts!";
                 context.sendInterrupt();
             }
             if (timeout == null) {
@@ -1945,7 +1945,7 @@ final class PolyglotEngineImpl implements com.oracle.truffle.polyglot.PolyglotIm
         Object[] prev;
         PolyglotThreadInfo info = context.getCachedThread();
         boolean enterReverted = false;
-        if (CompilerDirectives.injectBranchProbability(CompilerDirectives.LIKELY_PROBABILITY, info.getThread() == Thread.currentThread())) {
+        if (CompilerDirectives.injectBranchProbability(CompilerDirectives.LIKELY_PROBABILITY, info.getThread() == ThreadUtils.currentPlatformThread())) {
             // Volatile increment is safe if only one thread does it.
             prev = info.enterInternal();
 
@@ -2016,7 +2016,7 @@ final class PolyglotEngineImpl implements com.oracle.truffle.polyglot.PolyglotIm
 
         boolean entered = true;
         PolyglotThreadInfo info = context.getCachedThread();
-        if (CompilerDirectives.injectBranchProbability(CompilerDirectives.LIKELY_PROBABILITY, info.getThread() == Thread.currentThread())) {
+        if (CompilerDirectives.injectBranchProbability(CompilerDirectives.LIKELY_PROBABILITY, info.getThread() == ThreadUtils.currentPlatformThread())) {
             try {
                 info.notifyLeave(this, context);
             } finally {

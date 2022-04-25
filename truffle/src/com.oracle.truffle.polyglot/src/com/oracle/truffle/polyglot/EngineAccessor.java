@@ -156,7 +156,7 @@ final class EngineAccessor extends Accessor {
         return Arrays.<AbstractClassLoaderSupplier> asList(
                         new StrongClassLoaderSupplier(EngineAccessor.class.getClassLoader()),
                         new StrongClassLoaderSupplier(ClassLoader.getSystemClassLoader()),
-                        new WeakClassLoaderSupplier(Thread.currentThread().getContextClassLoader()));
+                        new WeakClassLoaderSupplier(ThreadUtils.currentPlatformThread().getContextClassLoader()));
     }
 
     static List<AbstractClassLoaderSupplier> locatorOrDefaultLoaders() {
@@ -1354,7 +1354,7 @@ final class EngineAccessor extends Accessor {
         @Override
         public boolean isContextActive(Object polyglotContext) {
             PolyglotContextImpl context = (PolyglotContextImpl) polyglotContext;
-            return context.isActive(Thread.currentThread());
+            return context.isActive(ThreadUtils.currentPlatformThread());
         }
 
         @SuppressWarnings("SynchronizationOnLocalVariableOrMethodParameter")

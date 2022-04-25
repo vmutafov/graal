@@ -150,9 +150,9 @@ final class PolyglotThreadLocalActions {
         TL_HANDSHAKE.ensureThreadInitialized();
 
         if (statistics != null) {
-            PolyglotStatisticsAction collector = new PolyglotStatisticsAction(Thread.currentThread());
+            PolyglotStatisticsAction collector = new PolyglotStatisticsAction(ThreadUtils.currentPlatformThread());
             statistics.add(collector);
-            submit(new Thread[]{Thread.currentThread()}, PolyglotEngineImpl.ENGINE_ID, collector, false);
+            submit(new Thread[]{ThreadUtils.currentPlatformThread()}, PolyglotEngineImpl.ENGINE_ID, collector, false);
         }
     }
 
@@ -401,7 +401,7 @@ final class PolyglotThreadLocalActions {
             logger.log(Level.INFO,
                             String.format("[tl] %-18s %8d  %-30s %-10s %-30s %s", action,
                                             handshake.debugId,
-                                            "thread[" + Thread.currentThread().getName() + "]",
+                                            "thread[" + ThreadUtils.currentPlatformThread().getName() + "]",
                                             handshake.originId,
                                             "action[" + handshake.action.toString() + "]", details));
         }
@@ -426,7 +426,7 @@ final class PolyglotThreadLocalActions {
          */
         ArrayList<AbstractTLHandshake> activeEventsList = new ArrayList<>(activeEvents.keySet());
         for (AbstractTLHandshake handshake : activeEventsList) {
-            if (!handshake.isEnabledForThread(Thread.currentThread())) {
+            if (!handshake.isEnabledForThread(ThreadUtils.currentPlatformThread())) {
                 continue;
             }
             Future<?> f = handshake.future;
@@ -490,7 +490,7 @@ final class PolyglotThreadLocalActions {
         @Override
         protected void perform(Access access) {
             logger.log(Level.INFO, String.format("Stack Trace Thread %s: %s",
-                            Thread.currentThread().getName(),
+                            ThreadUtils.currentPlatformThread().getName(),
                             PolyglotExceptionImpl.printStackToString(context.getHostContext(), access.getLocation())));
         }
     }
@@ -516,11 +516,11 @@ final class PolyglotThreadLocalActions {
         @Override
         public Thread getThread() {
             checkInvalid();
-            return Thread.currentThread();
+            return ThreadUtils.currentPlatformThread();
         }
 
         private void checkInvalid() {
-            if (thread != Thread.currentThread()) {
+            if (thread != ThreadUtils.currentPlatformThread()) {
                 throw new IllegalStateException("ThreadLocalAccess used on the wrong thread.");
             } else if (invalid) {
                 throw new IllegalStateException("ThreadLocalAccess is no longer valid.");
@@ -596,7 +596,7 @@ final class PolyglotThreadLocalActions {
             }
             try {
                 notifyStart();
-                PolyglotTLAccess access = new PolyglotTLAccess(Thread.currentThread(), location);
+                PolyglotTLAccess access = new PolyglotTLAccess(ThreadUtils.currentPlatformThread(), location);
                 try {
                     acceptImpl(access);
                 } finally {

@@ -42,12 +42,13 @@ package com.oracle.truffle.api.impl;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.oracle.truffle.api.ThreadUtils;
 import com.oracle.truffle.api.nodes.Node;
 
 final class DefaultThreadLocalHandshake extends ThreadLocalHandshake {
 
     static final DefaultThreadLocalHandshake SINGLETON = new DefaultThreadLocalHandshake();
-    private static final ThreadLocal<TruffleSafepointImpl> STATE = ThreadLocal.withInitial(() -> SINGLETON.getThreadState(Thread.currentThread()));
+    private static final ThreadLocal<TruffleSafepointImpl> STATE = ThreadLocal.withInitial(() -> SINGLETON.getThreadState(ThreadUtils.currentPlatformThread()));
 
     /*
      * Number of active pending threads. Allows to check the active threads more efficiently.

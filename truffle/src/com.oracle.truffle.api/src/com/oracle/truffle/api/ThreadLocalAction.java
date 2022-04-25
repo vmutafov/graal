@@ -87,7 +87,7 @@ import com.oracle.truffle.api.nodes.Node;
  * env.submitThreadLocal(null, new ThreadLocalAction(true, true) {
  *     &#64;Override
  *     protected void perform(Access access) {
- *         assert access.getThread() == Thread.currentThread();
+ *         assert access.getThread() == ThreadUtils.currentPlatformThread();
  *     }
  *
  *     &#64;Override

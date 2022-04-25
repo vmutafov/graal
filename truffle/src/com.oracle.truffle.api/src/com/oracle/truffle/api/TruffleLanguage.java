@@ -3995,7 +3995,7 @@ class TruffleLanguageSnippets {
             for (int i = 0; i < context.startedThreads.size();) {
                 Thread threadToJoin  = context.startedThreads.get(i);
                 try {
-                    if (threadToJoin != Thread.currentThread()) {
+                    if (threadToJoin != ThreadUtils.currentPlatformThread()) {
                         threadToJoin.interrupt();
                         threadToJoin.join();
                     }
@@ -4005,7 +4005,7 @@ class TruffleLanguageSnippets {
                 }
             }
             if (interrupted) {
-                Thread.currentThread().interrupt();
+                ThreadUtils.currentPlatformThread().interrupt();
             }
         }
     }

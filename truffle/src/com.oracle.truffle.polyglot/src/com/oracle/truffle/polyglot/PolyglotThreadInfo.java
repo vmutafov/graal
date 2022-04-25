@@ -60,7 +60,7 @@ final class PolyglotThreadInfo {
     @CompilationFinal private final TruffleWeakReference<Thread> thread;
 
     /*
-     * Only modify if Thread.currentThread() == thread.get().
+     * Only modify if ThreadUtils.currentPlatformThread() == thread.get().
      */
     private volatile int enteredCount;
     final LinkedList<Object[]> explicitContextStack = new LinkedList<>();
@@ -106,7 +106,7 @@ final class PolyglotThreadInfo {
     }
 
     boolean isCurrent() {
-        return getThread() == Thread.currentThread();
+        return getThread() == ThreadUtils.currentPlatformThread();
     }
 
     /**
@@ -121,7 +121,7 @@ final class PolyglotThreadInfo {
     }
 
     int getEnteredCount() {
-        assert Thread.currentThread() == thread.get();
+        assert ThreadUtils.currentPlatformThread() == thread.get();
         return enteredCount;
     }
 
@@ -159,7 +159,7 @@ final class PolyglotThreadInfo {
      */
     @SuppressFBWarnings("VO_VOLATILE_INCREMENT")
     void notifyLeave(PolyglotEngineImpl engine, PolyglotContextImpl profiledContext) {
-        assert Thread.currentThread() == getThread();
+        assert ThreadUtils.currentPlatformThread() == getThread();
 
         /*
          * Notify might be false if the context was closed already on a second thread.

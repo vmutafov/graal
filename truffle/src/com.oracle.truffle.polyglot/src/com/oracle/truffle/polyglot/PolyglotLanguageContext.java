@@ -509,7 +509,7 @@ final class PolyglotLanguageContext implements PolyglotImpl.VMObject {
 
     Object[] enterThread(PolyglotThread thread) {
         assert isInitialized();
-        assert Thread.currentThread() == thread;
+        assert ThreadUtils.currentPlatformThread() == thread;
         synchronized (context) {
             Object[] prev = context.engine.enter(context);
             lazy.activePolyglotThreads.add(thread);
@@ -531,7 +531,7 @@ final class PolyglotLanguageContext implements PolyglotImpl.VMObject {
     }
 
     void ensureCreated(PolyglotLanguage accessingLanguage) {
-        if (creatingThread == Thread.currentThread()) {
+        if (creatingThread == ThreadUtils.currentPlatformThread()) {
             throw PolyglotEngineException.illegalState(String.format("Cyclic access to language context for language %s. " +
                             "The context is currently being created.", language.getId()));
         }
@@ -577,7 +577,7 @@ final class PolyglotLanguageContext implements PolyglotImpl.VMObject {
                         checkThreadAccess(localEnv);
 
                         // no more errors after this line
-                        creatingThread = Thread.currentThread();
+                        creatingThread = ThreadUtils.currentPlatformThread();
                         env = localEnv;
                         lazy = localLazy;
                         assert EngineAccessor.LANGUAGE.getLanguage(env) != null;
@@ -681,7 +681,7 @@ final class PolyglotLanguageContext implements PolyglotImpl.VMObject {
 
                 initialized = true; // Allow language use during initialization
                 try {
-                    LANGUAGE.initializeThread(env, Thread.currentThread());
+                    LANGUAGE.initializeThread(env, ThreadUtils.currentPlatformThread());
                     LANGUAGE.postInitEnv(env);
 
                 } catch (Throwable e) {
@@ -711,7 +711,7 @@ final class PolyglotLanguageContext implements PolyglotImpl.VMObject {
                 ensureMultiThreadingInitialized();
                 for (PolyglotThreadInfo threadInfo : context.getSeenThreads().values()) {
                     final Thread thread = threadInfo.getThread();
-                    if (thread == Thread.currentThread()) {
+                    if (thread == ThreadUtils.currentPlatformThread()) {
                         continue;
                     }
                     LANGUAGE.initializeThread(env, thread);

@@ -382,7 +382,7 @@ final class PolyglotLocals {
         public T get(TruffleContext context) {
             PolyglotContextImpl c = (PolyglotContextImpl) EngineAccessor.LANGUAGE.getPolyglotContext(context);
             assert assertLanguageCreated(c, languageInstance.language);
-            return (T) c.getThreadLocal(location, Thread.currentThread());
+            return (T) c.getThreadLocal(location, ThreadUtils.currentPlatformThread());
         }
 
         @SuppressWarnings("unchecked")
@@ -457,7 +457,7 @@ final class PolyglotLocals {
         public T get(TruffleContext context) {
             PolyglotContextImpl c = (PolyglotContextImpl) EngineAccessor.LANGUAGE.getPolyglotContext(context);
             assert assertInstrumentCreated(c, instrument);
-            return (T) c.getThreadLocal(location, Thread.currentThread());
+            return (T) c.getThreadLocal(location, ThreadUtils.currentPlatformThread());
         }
 
         @SuppressWarnings("unchecked")

@@ -111,7 +111,7 @@ public final class Truffle {
                 String runtimeClassName = System.getProperty("truffle.TruffleRuntime");
                 if (runtimeClassName != null && runtimeClassName.length() > 0) {
                     try {
-                        ClassLoader cl = Thread.currentThread().getContextClassLoader();
+                        ClassLoader cl = ThreadUtils.currentPlatformThread().getContextClassLoader();
                         Class<?> runtimeClass = Class.forName(runtimeClassName, false, cl);
                         return (TruffleRuntime) runtimeClass.getDeclaredConstructor().newInstance();
                     } catch (Throwable e) {

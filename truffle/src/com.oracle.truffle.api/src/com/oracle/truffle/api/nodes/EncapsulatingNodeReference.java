@@ -44,6 +44,7 @@ import java.lang.ref.WeakReference;
 
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.ThreadUtils;
 
 /**
  * Thread local reference class to remember the current encapsulating node of an interpreter on the
@@ -102,7 +103,7 @@ public final class EncapsulatingNodeReference {
 
         @Override
         protected EncapsulatingNodeReference initialValue() {
-            return new EncapsulatingNodeReference(Thread.currentThread());
+            return new EncapsulatingNodeReference(ThreadUtils.currentPlatformThread());
         }
 
     };
@@ -126,7 +127,7 @@ public final class EncapsulatingNodeReference {
     public Node set(Node node) {
         assert node == null || node.isAdoptable() : "Node must be adoptable to be pushed as encapsulating node.";
         assert node == null || node.getRootNode() != null : "Node must be adopted by a RootNode to be pushed as encapsulating node.";
-        assert Thread.currentThread() == this.thread.get();
+        assert ThreadUtils.currentPlatformThread() == this.thread.get();
         Node old = this.reference;
         this.reference = node;
         return old;
@@ -142,7 +143,7 @@ public final class EncapsulatingNodeReference {
      * @since 20.2
      */
     public Node get() {
-        assert Thread.currentThread() == this.thread.get();
+        assert ThreadUtils.currentPlatformThread() == this.thread.get();
         return reference;
     }
 

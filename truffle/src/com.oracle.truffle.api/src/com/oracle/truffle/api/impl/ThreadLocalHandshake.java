@@ -58,6 +58,7 @@ import java.util.stream.Collectors;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.ThreadUtils;
 import com.oracle.truffle.api.TruffleSafepoint;
 import com.oracle.truffle.api.nodes.Node;
 
@@ -394,7 +395,7 @@ public abstract class ThreadLocalHandshake {
                     /*
                      * Mark the handshake for the current thread as deactivated.
                      */
-                    handshake.threads.put(Thread.currentThread(), Boolean.TRUE);
+                    handshake.threads.put(ThreadUtils.currentPlatformThread(), Boolean.TRUE);
                     resetPending();
                     return true;
                 }
@@ -420,8 +421,8 @@ public abstract class ThreadLocalHandshake {
                     return false;
                 }
                 boolean reactivated = false;
-                if (handshake.threads.containsKey(Thread.currentThread())) {
-                    if (!handshake.threads.get(Thread.currentThread())) {
+                if (handshake.threads.containsKey(ThreadUtils.currentPlatformThread())) {
+                    if (!handshake.threads.get(ThreadUtils.currentPlatformThread())) {
                         /*
                          * The handshake has already been processed.
                          */
@@ -437,9 +438,9 @@ public abstract class ThreadLocalHandshake {
                 /*
                  * Mark the handshake for the current thread as active (not deactivated).
                  */
-                handshake.threads.put(Thread.currentThread(), Boolean.FALSE);
+                handshake.threads.put(ThreadUtils.currentPlatformThread(), Boolean.FALSE);
                 if (handshake.activateThread()) {
-                    addHandshakeImpl(Thread.currentThread(), handshake, reactivated);
+                    addHandshakeImpl(ThreadUtils.currentPlatformThread(), handshake, reactivated);
                     return true;
                 }
             } finally {
@@ -658,7 +659,7 @@ public abstract class ThreadLocalHandshake {
             try {
                 if (interrupter != null && isPending()) {
                     interrupted = true;
-                    interrupter.interrupt(Thread.currentThread());
+                    interrupter.interrupt(ThreadUtils.currentPlatformThread());
                 }
             } finally {
                 lock.unlock();
@@ -747,7 +748,7 @@ public abstract class ThreadLocalHandshake {
 
         private void updateFastPending() {
             if (isPending()) {
-                setFastPendingAndInterrupt(Thread.currentThread());
+                setFastPendingAndInterrupt(ThreadUtils.currentPlatformThread());
             } else {
                 if (fastPendingSet) {
                     fastPendingSet = false;

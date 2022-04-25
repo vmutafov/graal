@@ -49,7 +49,7 @@ Env env; // language or instrument environment
 env.submitThreadLocal(null, new ThreadLocalAction(true /*side-effecting*/, true /*synchronous*/) {
      @Override
      protected void perform(Access access) {
-         assert access.getThread() == Thread.currentThread();
+         assert access.getThread() == ThreadUtils.currentPlatformThread();
      }
 });
 
@@ -62,7 +62,7 @@ Read more in the [javadoc](https://www.graalvm.org/truffle/javadoc/com/oracle/tr
 There is currently no way to run thread local actions while the thread is executing in boundary annotated methods unless the method cooperatively polls safepoints or uses the blocking API.
 Unfortunately it is not always possible to cooperatively poll safepoints, for example, if the code currently executes third party native code.
 A future improvement will allow to run code for other threads while they are blocked.
-This is one of the reasons why it is recommended to use `ThreadLocalAction.Access.getThread()` instead of directly using `Thread.currentThread()`.
+This is one of the reasons why it is recommended to use `ThreadLocalAction.Access.getThread()` instead of directly using `ThreadUtils.currentPlatformThread()`.
 When the native call returns it needs to wait for any thread local action that is currently executing for this thread.
 This will enable to collect guest language stack traces from other threads while they are blocked by uncooperative native code.
 Currently the action will be performed on the next safepoint location when the native code returns.

@@ -227,6 +227,9 @@ def _unittest_config_participant(config):
     # Needed for object model tests.
     vmArgs = vmArgs + ['--add-opens=org.graalvm.truffle/com.oracle.truffle.object=ALL-UNNAMED']
 
+    # Needed for Project Loom virtual threads `currentCarrierThread` method call
+    vmArgs = vmArgs + ['--add-opens=java.base/java.lang=ALL-UNNAMED']
+
     config = (vmArgs, mainClass, mainClassArgs)
     if _shouldRunTCKParticipant:
         config = _unittest_config_participant_tck(config)
